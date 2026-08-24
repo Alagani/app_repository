@@ -11,15 +11,18 @@ GitHub repo: `Alagani/app_repository`. GitOps repo: `Alagani/argocd_repository`.
    `:latest`), scans it with Trivy, fails the build on HIGH/CRITICAL
    vulnerabilities.
 3. **update-gitops** — checks out `argocd_repository`, bumps the dev overlay's
-   `newTag` to the git SHA, and opens a PR there (never pushes to its `main`
-   directly). Merging that PR is what actually changes what gets deployed —
-   this workflow never touches the Kubernetes cluster.
+   `newTag` to the git SHA, opens a PR there (never pushes to its `main`
+   directly), then enables GitHub's native auto-merge on that PR. The PR
+   still has to pass `argocd_repository`'s own `validate.yml` checks before
+   auto-merge actually lands it — this workflow itself never touches the
+   Kubernetes cluster, and dev is the only environment auto-merged this way
+   (staging/prod stay manually promoted, see that repo's README).
 
 ## Required repo configuration
 
 | Name | Type | Purpose |
 |---|---|---|
-| `GITOPS_PAT` | Actions secret | Fine-grained PAT scoped to `contents:write` on `argocd_repository` only, used to open the image-bump PR. A GitHub App installation token is the preferred alternative for org-wide use — ask CTO before adopting. |
+| `GITOPS_PAT` | Actions secret | Fine-grained PAT on `argocd_repository` only, with **Contents: Read and write** (to open the PR) and **Pull requests: Read and write** (to auto-merge it). A GitHub App installation token is the preferred alternative for org-wide use — ask CTO before adopting. |
 | `DOCKERHUB_USERNAME` | Actions secret | Docker Hub username (`jaga9989`). |
 | `DOCKERHUB_TOKEN` | Actions secret | Docker Hub **access token** (Account Settings > Security > New Access Token), not your account password. Scope it to this repo/repo-read-write only. |
 

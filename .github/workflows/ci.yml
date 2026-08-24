@@ -111,6 +111,7 @@ jobs:
       # Never push directly to the gitops repo's main branch — a PR keeps the
       # deploy diff reviewable and lets branch protection / CODEOWNERS gate it.
       - name: Open pull request
+        id: cpr
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITOPS_PAT }}
@@ -122,3 +123,15 @@ jobs:
             Automated image bump from fastapi-app@${{ github.sha }}
             Source workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           labels: automated-deploy
+
+      # Dev is the only auto-merged environment: this only starts GitHub's
+      # native auto-merge, which still waits for argocd_repository's
+      # validate.yml checks to pass before actually merging — it does not
+      # bypass them. Requires "Allow auto-merge" enabled in that repo's
+      # Settings > General, and validate.yml's jobs set as required status
+      # checks on its main branch (Settings > Branches).
+      - name: Enable auto-merge on the bump PR
+        if: steps.cpr.outputs.pull-request-operation == 'created'
+        env:
+          GH_TOKEN: ${{ secrets.GITOPS_PAT }}
+        run: gh pr merge --auto --squash "${{ steps.cpr.outputs.pull-request-number }}" --repo Alagani/argocd_repository
