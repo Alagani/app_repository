@@ -4,3 +4,8 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]
+
+[tool.pytest.ini_options]
+# Without this, pytest can't resolve `from app.main import app` in
+# tests/test_main.py — it doesn't add the repo root to sys.path on its own.
+pythonpath = ["."]
