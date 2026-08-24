@@ -1,14 +1,15 @@
-# fastapi-app
+# app_repository
 
 Minimal FastAPI service used to demo an app-repo -> GitOps-repo -> ArgoCD pipeline.
+GitHub repo: `Alagani/app_repository`. GitOps repo: `Alagani/argocd_respository`.
 
 ## Pipeline (`.github/workflows/ci.yml`)
 
 1. **test** — every PR and push to `main`: `ruff check` + `pytest`.
 2. **build-and-push** — `main` only: builds the image, pushes to
-   `ghcr.io/<owner>/fastapi-app:<git-sha>` (immutable tag, never `:latest`),
+   `ghcr.io/alagani/fastapi-app:<git-sha>` (immutable tag, never `:latest`),
    scans it with Trivy, fails the build on HIGH/CRITICAL vulnerabilities.
-3. **update-gitops** — checks out `gitops-argocd`, bumps the dev overlay's
+3. **update-gitops** — checks out `argocd_respository`, bumps the dev overlay's
    `newTag` to the git SHA, and opens a PR there (never pushes to its `main`
    directly). Merging that PR is what actually changes what gets deployed —
    this workflow never touches the Kubernetes cluster.
@@ -17,7 +18,7 @@ Minimal FastAPI service used to demo an app-repo -> GitOps-repo -> ArgoCD pipeli
 
 | Name | Type | Purpose |
 |---|---|---|
-| `GITOPS_PAT` | Actions secret | Fine-grained PAT scoped to `contents:write` on `gitops-argocd` only, used to open the image-bump PR. A GitHub App installation token is the preferred alternative for org-wide use — ask CTO before adopting. |
+| `GITOPS_PAT` | Actions secret | Fine-grained PAT scoped to `contents:write` on `argocd_respository` only, used to open the image-bump PR. A GitHub App installation token is the preferred alternative for org-wide use — ask CTO before adopting. |
 
 `GITHUB_TOKEN` (built-in) is used for the GHCR push — no extra registry
 credential needed. Enable "Read and write permissions" for `GITHUB_TOKEN` at

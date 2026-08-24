@@ -9,7 +9,7 @@ FROM python:3.12-slim AS runtime
 ARG APP_VERSION=0.0.0
 LABEL org.opencontainers.image.title="fastapi-app" \
       org.opencontainers.image.version="${APP_VERSION}" \
-      org.opencontainers.image.source="https://github.com/OWNER/fastapi-app"
+      org.opencontainers.image.source="https://github.com/Alagani/app_repository"
 
 RUN addgroup --system app && adduser --system --ingroup app app
 WORKDIR /app

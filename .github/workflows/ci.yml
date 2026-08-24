@@ -15,7 +15,9 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/fastapi-app
+  # GHCR requires a lowercase path — github.repository_owner preserves the
+  # account's display case ("Alagani"), which docker/build-push-action rejects.
+  IMAGE_NAME: ghcr.io/alagani/fastapi-app
 
 jobs:
   test:
@@ -94,15 +96,15 @@ jobs:
       - name: Checkout gitops repo
         uses: actions/checkout@v4
         with:
-          repository: OWNER/gitops-argocd
-          # Fine-grained PAT (repo-scoped, contents:write on gitops-argocd only)
-          # stored as a repo secret. A GitHub App installation token is the
-          # preferred alternative for multi-repo/org setups.
+          repository: Alagani/argocd_respository
+          # Fine-grained PAT (repo-scoped, contents:write on argocd_respository
+          # only) stored as a repo secret. A GitHub App installation token is
+          # the preferred alternative for multi-repo/org setups.
           token: ${{ secrets.GITOPS_PAT }}
-          path: gitops-argocd
+          path: argocd_respository
 
       - name: Bump dev image tag
-        working-directory: gitops-argocd/apps/fastapi-app/overlays/dev
+        working-directory: argocd_respository/apps/fastapi-app/overlays/dev
         run: |
           curl -sSL https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o /usr/local/bin/yq
           chmod +x /usr/local/bin/yq
@@ -114,7 +116,7 @@ jobs:
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITOPS_PAT }}
-          path: gitops-argocd
+          path: argocd_respository
           branch: bump/fastapi-app-dev-${{ github.sha }}
           title: "chore(dev): bump fastapi-app to ${{ github.sha }}"
           commit-message: "chore(dev): bump fastapi-app image to ${{ github.sha }}"
