@@ -11,6 +11,10 @@ LABEL org.opencontainers.image.title="fastapi-app" \
       org.opencontainers.image.version="${APP_VERSION}" \
       org.opencontainers.image.source="https://github.com/Alagani/app_repository"
 
+# Pull latest Debian security patches at build time rather than waiting on
+# the upstream python:3.12-slim image to be rebuilt with them.
+RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
+
 RUN addgroup --system app && adduser --system --ingroup app app
 WORKDIR /app
 
