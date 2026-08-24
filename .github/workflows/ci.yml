@@ -101,35 +101,37 @@ jobs:
           token: ${{ secrets.GITOPS_PAT }}
           path: argocd_repository
 
-      - name: Bump dev image tag
-        working-directory: argocd_repository/apps/fastapi-app/overlays/dev
+      - name: Bump prod image tag
+        working-directory: argocd_repository/apps/fastapi-app/overlays/prod
         run: |
           curl -sSL https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o /usr/local/bin/yq
           chmod +x /usr/local/bin/yq
           yq -i '(.images[] | select(.name == "fastapi-app") | .newTag) = "${{ github.sha }}"' kustomization.yaml
 
       # Never push directly to the gitops repo's main branch — a PR keeps the
-      # deploy diff reviewable and lets branch protection / CODEOWNERS gate it.
+      # deploy diff reviewable in git history, even though nothing here waits
+      # on a human to click it.
       - name: Open pull request
         id: cpr
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITOPS_PAT }}
           path: argocd_repository
-          branch: bump/fastapi-app-dev-${{ github.sha }}
-          title: "chore(dev): bump fastapi-app to ${{ github.sha }}"
-          commit-message: "chore(dev): bump fastapi-app image to ${{ github.sha }}"
+          branch: bump/fastapi-app-${{ github.sha }}
+          title: "chore: bump fastapi-app to ${{ github.sha }}"
+          commit-message: "chore: bump fastapi-app image to ${{ github.sha }}"
           body: |
             Automated image bump from fastapi-app@${{ github.sha }}
             Source workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           labels: automated-deploy
 
-      # Dev is the only auto-merged environment: this only starts GitHub's
-      # native auto-merge, which still waits for argocd_repository's
-      # validate.yml checks to pass before actually merging — it does not
-      # bypass them. Requires "Allow auto-merge" enabled in that repo's
-      # Settings > General, and validate.yml's jobs set as required status
-      # checks on its main branch (Settings > Branches).
+      # This is the only environment, and it's fully automated end-to-end:
+      # this step only starts GitHub's native auto-merge, which still waits
+      # for argocd_repository's validate.yml checks to pass before actually
+      # merging — it does not bypass them. Requires "Allow auto-merge"
+      # enabled in that repo's Settings > General, and validate.yml's jobs
+      # set as required status checks on its main branch (Settings >
+      # Branches).
       - name: Enable auto-merge on the bump PR
         if: steps.cpr.outputs.pull-request-operation == 'created'
         env:

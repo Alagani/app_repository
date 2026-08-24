@@ -10,13 +10,14 @@ GitHub repo: `Alagani/app_repository`. GitOps repo: `Alagani/argocd_repository`.
    `docker.io/jaga9989/simple-python-app:<git-sha>` (immutable tag, never
    `:latest`), scans it with Trivy, fails the build on HIGH/CRITICAL
    vulnerabilities.
-3. **update-gitops** — checks out `argocd_repository`, bumps the dev overlay's
-   `newTag` to the git SHA, opens a PR there (never pushes to its `main`
-   directly), then enables GitHub's native auto-merge on that PR. The PR
-   still has to pass `argocd_repository`'s own `validate.yml` checks before
-   auto-merge actually lands it — this workflow itself never touches the
-   Kubernetes cluster, and dev is the only environment auto-merged this way
-   (staging/prod stay manually promoted, see that repo's README).
+3. **update-gitops** — checks out `argocd_repository`, bumps the prod
+   overlay's `newTag` to the git SHA, opens a PR there (never pushes to its
+   `main` directly), then enables GitHub's native auto-merge on that PR. The
+   PR still has to pass `argocd_repository`'s own `validate.yml` checks
+   before auto-merge actually lands it — this workflow itself never touches
+   the Kubernetes cluster. There's a single environment and no manual
+   promotion step anywhere; see that repo's README for the full path from
+   merge to a synced cluster.
 
 ## Required repo configuration
 
