@@ -15,13 +15,17 @@ LABEL org.opencontainers.image.title="fastapi-app" \
 # the upstream python:3.12-slim image to be rebuilt with them.
 RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
 
-RUN addgroup --system app && adduser --system --ingroup app app
+RUN addgroup --system --gid 1000 app && adduser --system --uid 1000 --ingroup app app
 WORKDIR /app
 
 COPY --from=builder /install /usr/local
 COPY app ./app
 
-USER app
+# Numeric UID:GID, not the username — Kubernetes' runAsNonRoot check reads
+# the image's declared user literally; a name (e.g. "app") can't be
+# verified as non-root without running the container, and kubelet refuses
+# to start it (CreateContainerConfigError: "image has non-numeric user").
+USER 1000:1000
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=3s CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz')" || exit 1
 
