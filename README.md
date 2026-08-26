@@ -6,10 +6,11 @@ pipeline. GitHub repo: `Alagani/app_repository`. GitOps repo:
 demo (sync, self-heal, prune) lives; this repo just produces the image it
 deploys.
 
-Deploy target is a self-hosted **k3s** cluster, image registry is
-**Docker Hub** (`<dockerhub-username>/myapp-repo`). Everything on the
-infra side is created **manually — no Terraform/OpenTofu**. This repo's
-CI only ever talks to Docker Hub; it never touches the cluster.
+Deploy target is a **kind** cluster on the deployer's own machine (see
+`argocd_repository`'s README/`bootstrap.sh`) — no server to provision,
+no VM. Image registry is **Docker Hub** (`<dockerhub-username>/myapp-repo`),
+created **manually — no Terraform/OpenTofu**. This repo's CI only ever
+talks to Docker Hub; it never touches the cluster.
 
 ## Pipeline (`.github/workflows/ci.yml`)
 

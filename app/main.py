@@ -16,4 +16,4 @@ def root() -> Health:
 @app.get("/healthz", response_model=Health)
 def healthz() -> Health:
     """Liveness/readiness probe target for the Kubernetes Deployment."""
-    return Health(status="ok")
+    return Health(status="ok jagadeesh")
