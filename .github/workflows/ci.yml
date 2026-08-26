@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  IMAGE_NAME: docker.io/jaga9989/simple-python-app
+  IMAGE_REPO: myapp-repo
 
 jobs:
   test:
@@ -53,24 +53,29 @@ jobs:
 
       - uses: docker/setup-buildx-action@v3
 
-      # Docker Hub access token (not your account password), scoped to this
-      # repo only, stored as DOCKERHUB_TOKEN — see repo Settings > Secrets.
+      # Docker Hub access token (Account Settings -> Security), not the
+      # account password. DOCKERHUB_USERNAME is a repo variable (not a
+      # secret — a username isn't sensitive).
       - uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - id: meta
-        run: echo "image_ref=${IMAGE_NAME}:${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+        run: |
+          IMAGE_NAME="${{ vars.DOCKERHUB_USERNAME }}/${IMAGE_REPO}"
+          echo "image_ref=${IMAGE_NAME}:${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
 
-      # Immutable, content-addressed tag — never ':latest'. The Kubernetes
-      # manifest in the GitOps repo pins to this exact tag.
+      # Git-sha tag by convention. Unlike ECR, Docker Hub has no
+      # image_tag_mutability=IMMUTABLE setting — nothing server-side stops
+      # a duplicate tag push, so never reuse a tag by hand. update-gitops
+      # (below) is what actually deploys this tag; nothing here touches the
+      # cluster.
       - uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          tags: |
-            ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          tags: ${{ steps.meta.outputs.image_ref }}
           build-args: |
             APP_VERSION=${{ github.sha }}
           cache-from: type=gha
@@ -95,9 +100,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: Alagani/argocd_repository
-          # Fine-grained PAT (repo-scoped, contents:write on argocd_repository
-          # only) stored as a repo secret. A GitHub App installation token is
-          # the preferred alternative for multi-repo/org setups.
+          # Fine-grained PAT (repo-scoped to argocd_repository only) with
+          # Contents: Read and write (to open the PR) and Pull requests:
+          # Read and write (to auto-merge it). A GitHub App installation
+          # token is the preferred alternative for org-wide use — ask CTO
+          # before adopting.
           token: ${{ secrets.GITOPS_PAT }}
           path: argocd_repository
 
@@ -108,9 +115,9 @@ jobs:
           chmod +x /usr/local/bin/yq
           yq -i '(.images[] | select(.name == "fastapi-app") | .newTag) = "${{ github.sha }}"' kustomization.yaml
 
-      # Never push directly to the gitops repo's main branch — a PR keeps the
-      # deploy diff reviewable in git history, even though nothing here waits
-      # on a human to click it.
+      # Never push directly to the gitops repo's main branch — a PR keeps
+      # the deploy diff reviewable in git history, even though nothing here
+      # waits on a human to click it.
       - name: Open pull request
         id: cpr
         uses: peter-evans/create-pull-request@v7
