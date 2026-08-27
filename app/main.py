@@ -11,9 +11,3 @@ class Health(BaseModel):
 @app.get("/", response_model=Health)
 def root() -> Health:
     return Health(status="ok")
-
-
-@app.get("/healthz", response_model=Health)
-def healthz() -> Health:
-    """Liveness/readiness probe target for the Kubernetes Deployment."""
-    return Health(status="ok jagadeesh")
